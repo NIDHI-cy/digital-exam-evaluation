@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.production
+uploads/
+dist/
+.DS_Store
