@@ -1,19 +1,13 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import PageLayout from "./components/layout/PageLayout";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import EvaluationScreen from "./pages/EvaluationScreen";
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import AppRoutes from "./routes/AppRoutes";
 
 function App() {
   return (
     <BrowserRouter>
-      <PageLayout>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/evaluate" element={<EvaluationScreen />} />
-        </Routes>
-      </PageLayout>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

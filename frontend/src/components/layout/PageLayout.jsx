@@ -1,10 +1,12 @@
 import NavBar from "./NavBar";
 
-function PageLayout({ children }) {
+function PageLayout({ children, fullWidth = false }) {
   return (
-    <div>
+    <div className="app-layout">
       <NavBar />
-      <main>{children}</main>
+      <main className={`app-main${fullWidth ? " app-main--full" : ""}`}>
+        {children}
+      </main>
     </div>
   );
 }
