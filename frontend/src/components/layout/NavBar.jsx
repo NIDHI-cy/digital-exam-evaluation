@@ -19,6 +19,21 @@ function NavBar() {
     ...(role === "evaluator" || role === "reviewer"
       ? [{ to: "/evaluate", label: "Evaluate" }]
       : []),
+    ...(role === "admin" || role === "examiner"
+      ? [
+          { to: "/students", label: "Students" },
+          { to: "/exams", label: "Exams" },
+        ]
+      : []),
+    ...(role === "admin" || role === "cir"
+      ? [{ to: "/cir", label: "CIR Desk" }]
+      : []),
+    ...(role === "admin" || role === "reviewer"
+      ? [{ to: "/review", label: "Review" }]
+      : []),
+    ...(role === "admin" || role === "reviewer"
+      ? [{ to: "/audit", label: "Audit" }]
+      : []),
   ];
 
   return (

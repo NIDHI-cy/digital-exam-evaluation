@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CIR
+  EXAMINER
+  EVALUATOR
+  REVIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ExamStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum ScriptOcrStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  MANUAL
+}
+
+enum ScriptEvalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
+  REVIEWED
+}
+
+enum EvaluationStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
+  REVIEWED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         UserRole
+  department   String?
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+
+  assignedScripts AnswerScript[] @relation("AssignedEvaluator")
+  evaluations     Evaluation[]
+  auditLogs       AuditLog[]
+  examAssignments ExamAssignment[]
+  questionPapersUploaded QuestionPaper[] @relation("QuestionPaperUploader")
+}
+
+model Student {
+  id          String        @id @default(cuid())
+  name        String
+  rollNumber  String        @unique
+  branch      String
+  joiningYear Int
+  program     String        @default("UG")
+  status      StudentStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  answerScripts AnswerScript[]
+}
+
+model Exam {
+  id           String     @id @default(cuid())
+  course       String
+  subject      String
+  semester     String
+  academicYear String
+  examType     String
+  maxMarks     Int
+  status       ExamStatus @default(DRAFT)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  questions   Question[]
+  scripts     AnswerScript[]
+  assignments ExamAssignment[]
+  questionPapers QuestionPaper[]
+}
+
+model ExamAssignment {
+  id        String   @id @default(cuid())
+  examId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, userId])
+}
+
+model Question {
+  id         String @id @default(cuid())
+  examId     String
+  number     Int
+  text       String
+  maxMarks   Float
+  answerKey  String
+  paperPage  Int?
+  questionPaperId String?
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  questionPaper QuestionPaper? @relation(fields: [questionPaperId], references: [id], onDelete: SetNull)
+  answerPageMappings QuestionAnswerPageMapping[]
+
+  @@unique([examId, number])
+}
+
+model AnswerScript {
+  id               String           @id @default(cuid())
+  examId           String
+  studentId        String?
+  serialNumber     String?          @unique
+  filePath         String
+  pageCount        Int              @default(1)
+  branch           String?
+  classSection     String?
+  ocrStatus        ScriptOcrStatus  @default(PENDING)
+  ocrRawText       String?
+  evaluationStatus ScriptEvalStatus @default(NOT_STARTED)
+  anonymityVerified Boolean @default(false)
+  assignedToId     String?
+  uploadedAt       DateTime         @default(now())
+
+  exam       Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student    Student?    @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  assignedTo User?       @relation("AssignedEvaluator", fields: [assignedToId], references: [id], onDelete: SetNull)
+  evaluation Evaluation?
+  pages AnswerScriptPage[]
+  questionPageMappings QuestionAnswerPageMapping[]
+}
+
+model Evaluation {
+  id          String           @id @default(cuid())
+  scriptId    String           @unique
+  evaluatorId String
+  marksJson   String
+  commentsJson String @default("{}")
+  totalMarks  Float            @default(0)
+  status      EvaluationStatus @default(NOT_STARTED)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  submittedAt DateTime?
+
+  script    AnswerScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  evaluator User         @relation(fields: [evaluatorId], references: [id])
+}
+
+model QuestionPaper {
+  id           String   @id @default(cuid())
+  examId       String
+  uploadedById String
+  academicYear String
+  semester     String
+  examination  String
+  course       String
+  subject      String
+  filePath     String
+  originalName String
+  mimeType     String
+  createdAt    DateTime @default(now())
+
+  exam       Exam                    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  uploadedBy User                    @relation("QuestionPaperUploader", fields: [uploadedById], references: [id])
+  targets    QuestionPaperTarget[]
+  questions  Question[]
+
+  @@index([examId, academicYear, semester])
+}
+
+model QuestionPaperTarget {
+  id              String @id @default(cuid())
+  questionPaperId String
+  branch          String
+  classSection    String
+
+  questionPaper QuestionPaper @relation(fields: [questionPaperId], references: [id], onDelete: Cascade)
+
+  @@unique([questionPaperId, branch, classSection])
+  @@index([branch, classSection])
+}
+
+model AnswerScriptPage {
+  id           String @id @default(cuid())
+  scriptId     String
+  pageNumber   Int
+  filePath     String
+  originalName String
+  mimeType     String
+
+  script AnswerScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+
+  @@unique([scriptId, pageNumber])
+}
+
+model QuestionAnswerPageMapping {
+  id         String @id @default(cuid())
+  scriptId   String
+  questionId String
+  startPage  Int
+  endPage    Int
+
+  script   AnswerScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  question Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([scriptId, questionId])
+  @@index([scriptId, startPage, endPage])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  previous   String?
+  newValue   String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

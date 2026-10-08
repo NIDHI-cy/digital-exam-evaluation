@@ -4,3 +4,6 @@ node_modules/
 uploads/
 dist/
 .DS_Store
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+*.db-journal
