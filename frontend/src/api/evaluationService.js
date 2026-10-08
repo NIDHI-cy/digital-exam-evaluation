@@ -9,15 +9,15 @@ export async function fetchEvaluation(scriptId) {
   return response.data;
 }
 
-export async function saveEvaluation(scriptId, marks) {
+export async function saveEvaluation(scriptId, marks, comments = {}) {
   if (useMock) return mockApi.saveEvaluation(scriptId, marks);
-  const response = await axiosClient.put(`/evaluations/${scriptId}`, { marks });
+  const response = await axiosClient.put(`/evaluations/${scriptId}`, { marks, comments });
   return response.data;
 }
 
-export async function submitEvaluation(scriptId, marks) {
+export async function submitEvaluation(scriptId, marks, comments = {}) {
   if (useMock) return mockApi.submitEvaluation(scriptId, marks);
-  const response = await axiosClient.post(`/evaluations/${scriptId}/submit`, { marks });
+  const response = await axiosClient.post(`/evaluations/${scriptId}/submit`, { marks, comments });
   return response.data;
 }
 

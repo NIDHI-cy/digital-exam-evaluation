@@ -66,6 +66,8 @@ router.post("/", authorize("ADMIN", "EXAMINER"), async (req, res, next) => {
               text: z.string(),
               maxMarks: z.number().positive(),
               answerKey: z.string(),
+              paperPage: z.number().int().positive().optional(),
+              questionPaperId: z.string().optional(),
             })
           )
           .optional(),
@@ -160,7 +162,7 @@ router.put("/:id", authorize("ADMIN", "EXAMINER"), async (req, res, next) => {
   }
 });
 
-router.post("/:id/questions", authorize("ADMIN", "EXAMINER"), async (req, res, next) => {
+router.post("/:id/questions", authorize("ADMIN", "CIR", "EXAMINER"), async (req, res, next) => {
   try {
     const exam = await prisma.exam.findUnique({ where: { id: req.params.id } });
     if (!exam) throw new AppError("Exam not found", 404);
@@ -172,16 +174,35 @@ router.post("/:id/questions", authorize("ADMIN", "EXAMINER"), async (req, res, n
           text: z.string(),
           maxMarks: z.number().positive(),
           answerKey: z.string(),
+          paperPage: z.number().int().positive().optional(),
+          questionPaperId: z.string().optional(),
         })
       )
       .parse(req.body);
+
+    const paperIds = [...new Set(questions.map((question) => question.questionPaperId).filter(Boolean))];
+    if (paperIds.length) {
+      const papers = await prisma.questionPaper.findMany({
+        where: { id: { in: paperIds }, examId: exam.id },
+        select: { id: true },
+      });
+      if (papers.length !== paperIds.length) {
+        throw new AppError("Question paper must belong to this exam", 422);
+      }
+    }
 
     const created = await prisma.$transaction(
       questions.map((q) =>
         prisma.question.upsert({
           where: { examId_number: { examId: exam.id, number: q.number } },
           create: { examId: exam.id, ...q },
-          update: { text: q.text, maxMarks: q.maxMarks, answerKey: q.answerKey },
+          update: {
+            text: q.text,
+            maxMarks: q.maxMarks,
+            answerKey: q.answerKey,
+            paperPage: q.paperPage,
+            questionPaperId: q.questionPaperId,
+          },
         })
       )
     );

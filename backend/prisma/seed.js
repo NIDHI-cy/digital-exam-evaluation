@@ -58,6 +58,17 @@ async function main() {
         department: "Computer Science & Engineering",
       },
     }),
+    prisma.user.upsert({
+      where: { email: "cir@amrita.edu" },
+      update: {},
+      create: {
+        name: "CIR Department",
+        email: "cir@amrita.edu",
+        passwordHash: await bcrypt.hash("cir123", 10),
+        role: "CIR",
+        department: "Central Internal Review",
+      },
+    }),
   ]);
 
   const evaluator = users[0];
@@ -151,7 +162,7 @@ async function main() {
     const serial = serials[i];
     await prisma.answerScript.upsert({
       where: { serialNumber: serial },
-      update: { assignedToId: evaluator.id },
+      update: { assignedToId: evaluator.id, anonymityVerified: true },
       create: {
         examId: exam.id,
         studentId: students[i % students.length]?.id,
@@ -159,6 +170,7 @@ async function main() {
         filePath: placeholderPath,
         pageCount: 6 + i,
         ocrStatus: i === 0 ? "SUCCESS" : "MANUAL",
+        anonymityVerified: true,
         evaluationStatus:
           i === 0 ? "NOT_STARTED" : i === 1 ? "IN_PROGRESS" : i === 2 ? "SUBMITTED" : "NOT_STARTED",
         assignedToId: evaluator.id,

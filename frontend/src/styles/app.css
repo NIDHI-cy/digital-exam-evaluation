@@ -259,6 +259,42 @@ body {
   margin-bottom: 16px;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.form-grid .form-group {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.form-input[multiple] {
+  min-height: 120px;
+}
+
+.cir-anonymity-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.cir-anonymity-check input {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
 .form-label {
   font-size: 13px;
   font-weight: 500;
@@ -553,9 +589,20 @@ body {
 
 .eval-layout {
   display: grid;
-  grid-template-columns: 1fr 320px 300px;
-  height: calc(100svh - var(--nav-height));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(280px, 0.85fr);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
+}
+
+.evaluation-workspace {
+  min-height: calc(100svh - var(--nav-height));
+  display: flex;
+  flex-direction: column;
+}
+
+.evaluation-workspace > .alert {
+  margin: 10px 16px 0;
 }
 
 .eval-panel {
@@ -596,6 +643,152 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+}
+
+.question-paper-panel h3,
+.marks-panel h3 {
+  font-size: 18px;
+  margin: 0 0 10px;
+  color: var(--text-primary);
+}
+
+.question-paper-panel__text {
+  padding: 12px 0 18px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.question-navigator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.question-navigator__item {
+  flex: 0 0 42px;
+  height: 36px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.question-navigator__item.is-current {
+  border-color: var(--amrita-maroon);
+  box-shadow: 0 0 0 2px rgba(139, 26, 26, 0.14);
+}
+
+.question-navigator__item.is-marked {
+  background: var(--success-bg);
+  border-color: var(--success);
+}
+
+.question-navigator__item.is-dirty {
+  outline: 2px dashed var(--warning, #9a6700);
+  outline-offset: 2px;
+}
+
+.question-navigator__legend {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.question-step-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.marks-entry__current {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 24px;
+  font-family: var(--font-mono);
+}
+
+.marks-comment {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.script-viewer__identity {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--amrita-maroon);
+}
+
+.script-viewer__unmapped,
+.document-preview__empty {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 18px;
+  color: var(--text-muted);
+  text-align: center;
+  background: var(--surface-alt);
+  border: 1px dashed var(--border-strong);
+}
+
+.document-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 260px;
+  height: 48vh;
+  overflow: hidden;
+  background: var(--surface-alt);
+}
+
+.document-preview__controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
+.document-preview iframe {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  background: white;
+}
+
+.document-preview__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.document-preview__scroll img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: top center;
 }
 
 .script-viewer {
@@ -803,10 +996,18 @@ body {
     overflow: visible;
   }
 
+  .evaluation-workspace {
+    min-height: 0;
+  }
+
   .eval-panel {
     border-right: none;
     border-bottom: 1px solid var(--border);
     min-height: 300px;
+  }
+
+  .document-preview {
+    height: 55vh;
   }
 }
 

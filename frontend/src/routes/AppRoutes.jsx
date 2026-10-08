@@ -7,6 +7,8 @@ import EvaluationScreen from "../pages/EvaluationScreen";
 import StudentsPage from "../pages/StudentsPage";
 import ExamsPage from "../pages/ExamsPage";
 import AuditPage from "../pages/AuditPage";
+import ReviewerPage from "../pages/ReviewerPage";
+import CirPage from "../pages/CirPage";
 
 function AppRoutes() {
   return (
@@ -47,11 +49,33 @@ function AppRoutes() {
       />
 
       <Route
+        path="/cir"
+        element={
+          <ProtectedRoute allowedRoles={["admin", "cir"]}>
+            <PageLayout>
+              <CirPage />
+            </PageLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/audit"
         element={
           <ProtectedRoute allowedRoles={["admin", "reviewer"]}>
             <PageLayout>
               <AuditPage />
+            </PageLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/review"
+        element={
+          <ProtectedRoute allowedRoles={["reviewer", "admin"]}>
+            <PageLayout>
+              <ReviewerPage />
             </PageLayout>
           </ProtectedRoute>
         }

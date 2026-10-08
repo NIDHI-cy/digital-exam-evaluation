@@ -25,6 +25,12 @@ function NavBar() {
           { to: "/exams", label: "Exams" },
         ]
       : []),
+    ...(role === "admin" || role === "cir"
+      ? [{ to: "/cir", label: "CIR Desk" }]
+      : []),
+    ...(role === "admin" || role === "reviewer"
+      ? [{ to: "/review", label: "Review" }]
+      : []),
     ...(role === "admin" || role === "reviewer"
       ? [{ to: "/audit", label: "Audit" }]
       : []),

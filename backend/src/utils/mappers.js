@@ -14,7 +14,8 @@ function scriptStatusToFrontend(status) {
 }
 
 function evalStatusToFrontend(status) {
-  if (status === "SUBMITTED" || status === "REVIEWED") return "submitted";
+  if (status === "SUBMITTED") return "submitted";
+  if (status === "REVIEWED") return "reviewed";
   if (status === "NOT_STARTED") return "draft";
   return "draft";
 }
@@ -77,10 +78,12 @@ export function mapQuestion(q) {
     text: q.text,
     maxMarks: q.maxMarks,
     answerKey: q.answerKey,
+    paperPage: q.paperPage,
+    questionPaperId: q.questionPaperId,
   };
 }
 
-export function mapScript(script, exam) {
+export function mapScript(script, exam, { includeAssignment = false, includeIdentity = false } = {}) {
   const examName = exam
     ? `${exam.subject} — ${exam.examType}`
     : script.exam?.subject
@@ -90,6 +93,7 @@ export function mapScript(script, exam) {
   const ex = exam || script.exam;
   return {
     id: script.id,
+    anonymousScriptId: `ANS-${script.id.slice(-8).toUpperCase()}`,
     serialNumber: script.serialNumber,
     examId: script.examId,
     examName,
@@ -99,22 +103,38 @@ export function mapScript(script, exam) {
     status: scriptStatusToFrontend(script.evaluationStatus),
     totalMaxMarks: ex?.maxMarks,
     pageCount: script.pageCount,
+    anonymityVerified: Boolean(script.anonymityVerified),
     assignedAt: script.uploadedAt,
     ocrStatus: script.ocrStatus.toLowerCase(),
     evaluationStatus: script.evaluationStatus,
-    filePath: script.filePath,
-    studentId: script.studentId,
+    ...(includeAssignment ? { assignedToId: script.assignedToId } : {}),
+    ...(includeIdentity ? {
+      studentId: script.studentId,
+      branch: script.branch,
+      classSection: script.classSection,
+    } : {}),
   };
 }
 
 export function mapEvaluation(evaluation, scriptId) {
   const marks = JSON.parse(evaluation.marksJson || "{}");
+  const comments = JSON.parse(evaluation.commentsJson || "{}");
   return {
     scriptId: scriptId || evaluation.scriptId,
     marks,
+    comments,
     status: evalStatusToFrontend(evaluation.status),
     backendStatus: evaluation.status,
     total: evaluation.totalMarks,
     submittedAt: evaluation.submittedAt,
+    ...(evaluation.evaluator
+      ? {
+          evaluator: {
+            id: evaluation.evaluator.id,
+            name: evaluation.evaluator.name,
+            email: evaluation.evaluator.email,
+          },
+        }
+      : {}),
   };
 }

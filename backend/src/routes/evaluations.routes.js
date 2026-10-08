@@ -25,6 +25,9 @@ async function getScriptForUser(scriptId, user) {
   if (user.role === "EVALUATOR" && script.assignedToId !== user.id) {
     throw new AppError("Forbidden", 403);
   }
+  if (user.role === "EVALUATOR" && !script.anonymityVerified) {
+    throw new AppError("Script identity has not been reviewed by CIR", 403);
+  }
   return script;
 }
 
@@ -38,7 +41,10 @@ router.get("/", authorize("ADMIN", "REVIEWER", "EXAMINER"), async (req, res, nex
       evaluations.map((e) => ({
         ...mapEvaluation(e),
         evaluator: { id: e.evaluator.id, name: e.evaluator.name, email: e.evaluator.email },
-        script: { id: e.script.id, serialNumber: e.script.serialNumber },
+        script: {
+          id: e.script.id,
+          anonymousScriptId: `ANS-${e.script.id.slice(-8).toUpperCase()}`,
+        },
       }))
     );
   } catch (err) {
@@ -51,6 +57,7 @@ router.get("/:scriptId", async (req, res, next) => {
     const script = await getScriptForUser(req.params.scriptId, req.user);
     let evaluation = await prisma.evaluation.findUnique({
       where: { scriptId: script.id },
+      ...(req.user.role === "EVALUATOR" ? {} : { include: { evaluator: true } }),
     });
 
     if (!evaluation) {
@@ -62,6 +69,14 @@ router.get("/:scriptId", async (req, res, next) => {
           totalMarks: 0,
           status: "NOT_STARTED",
         },
+        ...(req.user.role === "EVALUATOR" ? {} : { include: { evaluator: true } }),
+      });
+      await logAudit({
+        userId: req.user.id,
+        action: "EVALUATION_CREATED",
+        entityType: "Evaluation",
+        entityId: evaluation.id,
+        newValue: { status: evaluation.status },
       });
     }
 
@@ -74,9 +89,13 @@ router.get("/:scriptId", async (req, res, next) => {
 router.put("/:scriptId", authorize("EVALUATOR", "EXAMINER", "ADMIN"), async (req, res, next) => {
   try {
     const script = await getScriptForUser(req.params.scriptId, req.user);
-    const { marks } = z.object({ marks: z.record(z.any()) }).parse(req.body);
+    const { marks, comments } = z.object({
+      marks: z.record(z.any()),
+      comments: z.record(z.string()).optional(),
+    }).parse(req.body);
 
     let evaluation = await prisma.evaluation.findUnique({ where: { scriptId: script.id } });
+    const isNewEvaluation = !evaluation;
     if (!evaluation) {
       evaluation = await prisma.evaluation.create({
         data: {
@@ -109,6 +128,7 @@ router.put("/:scriptId", authorize("EVALUATOR", "EXAMINER", "ADMIN"), async (req
       where: { id: evaluation.id },
       data: {
         marksJson: JSON.stringify(marks),
+        commentsJson: JSON.stringify(comments || {}),
         totalMarks: validation.total,
         status: nextStatus,
         evaluatorId: req.user.id,
@@ -124,7 +144,7 @@ router.put("/:scriptId", authorize("EVALUATOR", "EXAMINER", "ADMIN"), async (req
 
     await logAudit({
       userId: req.user.id,
-      action: "EVALUATION_SAVED",
+      action: isNewEvaluation ? "EVALUATION_CREATED" : "EVALUATION_UPDATED",
       entityType: "Evaluation",
       entityId: updated.id,
       newValue: { marks, total: validation.total, status: nextStatus },
@@ -139,7 +159,10 @@ router.put("/:scriptId", authorize("EVALUATOR", "EXAMINER", "ADMIN"), async (req
 router.post("/:scriptId/submit", authorize("EVALUATOR", "EXAMINER", "ADMIN"), async (req, res, next) => {
   try {
     const script = await getScriptForUser(req.params.scriptId, req.user);
-    const { marks } = z.object({ marks: z.record(z.any()) }).parse(req.body);
+    const { marks, comments } = z.object({
+      marks: z.record(z.any()),
+      comments: z.record(z.string()).optional(),
+    }).parse(req.body);
 
     let evaluation = await prisma.evaluation.findUnique({ where: { scriptId: script.id } });
     if (!evaluation) {
@@ -163,6 +186,7 @@ router.post("/:scriptId/submit", authorize("EVALUATOR", "EXAMINER", "ADMIN"), as
       where: { id: evaluation.id },
       data: {
         marksJson: JSON.stringify(marks),
+        ...(comments ? { commentsJson: JSON.stringify(comments) } : {}),
         totalMarks: validation.total,
         status: "SUBMITTED",
         submittedAt: new Date(),

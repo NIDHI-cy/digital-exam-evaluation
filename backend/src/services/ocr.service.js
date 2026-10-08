@@ -7,6 +7,11 @@ const SERIAL_PATTERNS = [
   /SN[:\s#-]*(\d{5,8})/i,
 ];
 
+export function sanitizeSerialNumber(value) {
+  const normalized = String(value ?? "").trim();
+  return /^\d{5,8}$/.test(normalized) ? normalized : null;
+}
+
 export async function extractSerialFromImage(relativePath) {
   try {
     const buffer = await readStoredFile(relativePath);
@@ -19,8 +24,9 @@ export async function extractSerialFromImage(relativePath) {
     const cleaned = text.replace(/\s+/g, " ").trim();
     for (const pattern of SERIAL_PATTERNS) {
       const match = cleaned.match(pattern);
-      if (match?.[1]) {
-        return { serialNumber: match[1], rawText: cleaned, success: true };
+      const serialNumber = sanitizeSerialNumber(match?.[1]);
+      if (serialNumber) {
+        return { serialNumber, rawText: cleaned, success: true };
       }
     }
 

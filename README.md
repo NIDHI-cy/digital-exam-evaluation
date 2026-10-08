@@ -50,6 +50,7 @@ Set `VITE_USE_MOCK_API=true` in `frontend/.env` to run UI without the backend.
 | Admin | admin@amrita.edu | admin123 |
 | Reviewer | reviewer@amrita.edu | reviewer123 |
 | Examiner | examiner@amrita.edu | examiner123 |
+| CIR | cir@amrita.edu | cir123 |
 
 ## AVV Chennai roll numbers
 
@@ -59,6 +60,10 @@ Set `VITE_USE_MOCK_API=true` in `frontend/.env` to run UI without the backend.
 Examples: `CH.SC.U4AIE24061`, `CH.SC.U4AIE26034`, `CH.EN.U4ECE24061`
 
 Test: `node backend/scripts/test-roll-number.js`
+
+## Project workflow
+
+See [PROJECT_GUIDE.md](PROJECT_GUIDE.md) for the role-based workflow, known limitations, and local setup steps.
 
 ## API documentation
 

@@ -9,6 +9,7 @@ datasource db {
 
 enum UserRole {
   ADMIN
+  CIR
   EXAMINER
   EVALUATOR
   REVIEWER
@@ -67,6 +68,7 @@ model User {
   evaluations     Evaluation[]
   auditLogs       AuditLog[]
   examAssignments ExamAssignment[]
+  questionPapersUploaded QuestionPaper[] @relation("QuestionPaperUploader")
 }
 
 model Student {
@@ -98,6 +100,7 @@ model Exam {
   questions   Question[]
   scripts     AnswerScript[]
   assignments ExamAssignment[]
+  questionPapers QuestionPaper[]
 }
 
 model ExamAssignment {
@@ -119,8 +122,12 @@ model Question {
   text       String
   maxMarks   Float
   answerKey  String
+  paperPage  Int?
+  questionPaperId String?
 
   exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  questionPaper QuestionPaper? @relation(fields: [questionPaperId], references: [id], onDelete: SetNull)
+  answerPageMappings QuestionAnswerPageMapping[]
 
   @@unique([examId, number])
 }
@@ -129,12 +136,15 @@ model AnswerScript {
   id               String           @id @default(cuid())
   examId           String
   studentId        String?
-  serialNumber     String           @unique
+  serialNumber     String?          @unique
   filePath         String
   pageCount        Int              @default(1)
+  branch           String?
+  classSection     String?
   ocrStatus        ScriptOcrStatus  @default(PENDING)
   ocrRawText       String?
   evaluationStatus ScriptEvalStatus @default(NOT_STARTED)
+  anonymityVerified Boolean @default(false)
   assignedToId     String?
   uploadedAt       DateTime         @default(now())
 
@@ -142,6 +152,8 @@ model AnswerScript {
   student    Student?    @relation(fields: [studentId], references: [id], onDelete: SetNull)
   assignedTo User?       @relation("AssignedEvaluator", fields: [assignedToId], references: [id], onDelete: SetNull)
   evaluation Evaluation?
+  pages AnswerScriptPage[]
+  questionPageMappings QuestionAnswerPageMapping[]
 }
 
 model Evaluation {
@@ -149,6 +161,7 @@ model Evaluation {
   scriptId    String           @unique
   evaluatorId String
   marksJson   String
+  commentsJson String @default("{}")
   totalMarks  Float            @default(0)
   status      EvaluationStatus @default(NOT_STARTED)
   createdAt   DateTime         @default(now())
@@ -157,6 +170,67 @@ model Evaluation {
 
   script    AnswerScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
   evaluator User         @relation(fields: [evaluatorId], references: [id])
+}
+
+model QuestionPaper {
+  id           String   @id @default(cuid())
+  examId       String
+  uploadedById String
+  academicYear String
+  semester     String
+  examination  String
+  course       String
+  subject      String
+  filePath     String
+  originalName String
+  mimeType     String
+  createdAt    DateTime @default(now())
+
+  exam       Exam                    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  uploadedBy User                    @relation("QuestionPaperUploader", fields: [uploadedById], references: [id])
+  targets    QuestionPaperTarget[]
+  questions  Question[]
+
+  @@index([examId, academicYear, semester])
+}
+
+model QuestionPaperTarget {
+  id              String @id @default(cuid())
+  questionPaperId String
+  branch          String
+  classSection    String
+
+  questionPaper QuestionPaper @relation(fields: [questionPaperId], references: [id], onDelete: Cascade)
+
+  @@unique([questionPaperId, branch, classSection])
+  @@index([branch, classSection])
+}
+
+model AnswerScriptPage {
+  id           String @id @default(cuid())
+  scriptId     String
+  pageNumber   Int
+  filePath     String
+  originalName String
+  mimeType     String
+
+  script AnswerScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+
+  @@unique([scriptId, pageNumber])
+}
+
+model QuestionAnswerPageMapping {
+  id         String @id @default(cuid())
+  scriptId   String
+  questionId String
+  startPage  Int
+  endPage    Int
+
+  script   AnswerScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  question Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([scriptId, questionId])
+  @@index([scriptId, startPage, endPage])
 }
 
 model AuditLog {

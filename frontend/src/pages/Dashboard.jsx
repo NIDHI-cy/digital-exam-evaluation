@@ -95,7 +95,7 @@ function Dashboard() {
               <tbody>
                 {scripts.map((script) => (
                   <tr key={script.id}>
-                    <td className="scripts-table__serial">{script.serialNumber}</td>
+                    <td className="scripts-table__serial">{script.anonymousScriptId}</td>
                     <td>{script.examName}</td>
                     <td>{script.course}</td>
                     <td>{script.pageCount}</td>

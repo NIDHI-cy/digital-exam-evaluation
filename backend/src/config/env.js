@@ -12,6 +12,6 @@ export const env = {
   uploadDir: path.resolve(
     process.env.UPLOAD_DIR || path.join(__dirname, "../../../uploads")
   ),
-  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174",
   databaseUrl: process.env.DATABASE_URL || "file:./dev.db",
 };

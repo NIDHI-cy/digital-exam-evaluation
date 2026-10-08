@@ -15,7 +15,7 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get("/", authorize("ADMIN", "EXAMINER", "REVIEWER"), async (req, res, next) => {
+router.get("/", authorize("ADMIN", "CIR", "EXAMINER", "REVIEWER"), async (req, res, next) => {
   try {
     const { q, branch, joiningYear, status } = req.query;
     const where = {};
@@ -40,7 +40,7 @@ router.get("/", authorize("ADMIN", "EXAMINER", "REVIEWER"), async (req, res, nex
   }
 });
 
-router.get("/:id", authorize("ADMIN", "EXAMINER", "REVIEWER"), async (req, res, next) => {
+router.get("/:id", authorize("ADMIN", "CIR", "EXAMINER", "REVIEWER"), async (req, res, next) => {
   try {
     const student = await prisma.student.findUnique({ where: { id: req.params.id } });
     if (!student) throw new AppError("Student not found", 404);

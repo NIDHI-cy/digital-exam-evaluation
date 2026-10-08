@@ -9,11 +9,27 @@ import scriptsRoutes from "./routes/scripts.routes.js";
 import evaluationsRoutes from "./routes/evaluations.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import portalRoutes from "./routes/portal.routes.js";
+import questionPapersRoutes from "./routes/questionPapers.routes.js";
 
 export function createApp() {
   const app = express();
+  const allowedOrigins = (env.corsOrigin || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
-  app.use(cors({ origin: env.corsOrigin, credentials: true }));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+        callback(new Error("Not allowed by CORS"));
+      },
+      credentials: true,
+    })
+  );
   app.use(express.json({ limit: "2mb" }));
 
   app.get("/api/health", (req, res) => {
@@ -24,6 +40,7 @@ export function createApp() {
   app.use("/api/students", studentsRoutes);
   app.use("/api/exams", examsRoutes);
   app.use("/api/scripts", scriptsRoutes);
+  app.use("/api/question-papers", questionPapersRoutes);
   app.use("/api/evaluations", evaluationsRoutes);
   app.use("/api/audit", auditRoutes);
   app.use("/api/portal", portalRoutes);
