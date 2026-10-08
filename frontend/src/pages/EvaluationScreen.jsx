@@ -100,8 +100,16 @@ function EvaluationScreen() {
       const result = await submitEvaluation(scriptId, marks);
       setStatus(result.status);
       setMessage("Evaluation submitted successfully. Marks will be transferred through the university workflow.");
-    } catch {
-      setError("Failed to submit evaluation. Please try again.");
+    } catch (err) {
+      const msg = err.response?.data?.error;
+      const details = err.response?.data?.details;
+      setError(
+        msg
+          ? details
+            ? `${msg} — check all question marks.`
+            : msg
+          : "Failed to submit evaluation. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +175,11 @@ function EvaluationScreen() {
             <div className="eval-panel__meta">Anonymous · Serial {script.serialNumber}</div>
           </div>
           <div className="eval-panel__body">
-            <ScriptViewer serialNumber={script.serialNumber} pageCount={script.pageCount} />
+            <ScriptViewer
+              scriptId={script.id}
+              serialNumber={script.serialNumber}
+              pageCount={script.pageCount}
+            />
           </div>
         </div>
 

@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  EXAMINER
+  EVALUATOR
+  REVIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ExamStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum ScriptOcrStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  MANUAL
+}
+
+enum ScriptEvalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
+  REVIEWED
+}
+
+enum EvaluationStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
+  REVIEWED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         UserRole
+  department   String?
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+
+  assignedScripts AnswerScript[] @relation("AssignedEvaluator")
+  evaluations     Evaluation[]
+  auditLogs       AuditLog[]
+  examAssignments ExamAssignment[]
+}
+
+model Student {
+  id          String        @id @default(cuid())
+  name        String
+  rollNumber  String        @unique
+  branch      String
+  joiningYear Int
+  program     String        @default("UG")
+  status      StudentStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  answerScripts AnswerScript[]
+}
+
+model Exam {
+  id           String     @id @default(cuid())
+  course       String
+  subject      String
+  semester     String
+  academicYear String
+  examType     String
+  maxMarks     Int
+  status       ExamStatus @default(DRAFT)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  questions   Question[]
+  scripts     AnswerScript[]
+  assignments ExamAssignment[]
+}
+
+model ExamAssignment {
+  id        String   @id @default(cuid())
+  examId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, userId])
+}
+
+model Question {
+  id         String @id @default(cuid())
+  examId     String
+  number     Int
+  text       String
+  maxMarks   Float
+  answerKey  String
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, number])
+}
+
+model AnswerScript {
+  id               String           @id @default(cuid())
+  examId           String
+  studentId        String?
+  serialNumber     String           @unique
+  filePath         String
+  pageCount        Int              @default(1)
+  ocrStatus        ScriptOcrStatus  @default(PENDING)
+  ocrRawText       String?
+  evaluationStatus ScriptEvalStatus @default(NOT_STARTED)
+  assignedToId     String?
+  uploadedAt       DateTime         @default(now())
+
+  exam       Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student    Student?    @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  assignedTo User?       @relation("AssignedEvaluator", fields: [assignedToId], references: [id], onDelete: SetNull)
+  evaluation Evaluation?
+}
+
+model Evaluation {
+  id          String           @id @default(cuid())
+  scriptId    String           @unique
+  evaluatorId String
+  marksJson   String
+  totalMarks  Float            @default(0)
+  status      EvaluationStatus @default(NOT_STARTED)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  submittedAt DateTime?
+
+  script    AnswerScript @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  evaluator User         @relation(fields: [evaluatorId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  previous   String?
+  newValue   String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
